@@ -59,37 +59,37 @@ class Wiki {
         const defaultPages = {
             'management-overview': {
                 title: 'Management Overview',
-                content: this.generateManagementOverview(),
+                content: this.generateOverviewContent('management'),
                 type: 'overview'
             },
             'aero-overview': {
                 title: 'Aerodynamics Overview',
-                content: this.generateAeroOverview(),
+                content: this.generateOverviewContent('aero'),
                 type: 'overview'
             },
             'chassis-overview': {
                 title: 'Chassis Overview',
-                content: this.generateChassisOverview(),
+                content: this.generateOverviewContent('chassis'),
                 type: 'overview'
             },
             'electrical-overview': {
                 title: 'Electrical Overview',
-                content: this.generateElectricalOverview(),
+                content: this.generateOverviewContent('electrical'),
                 type: 'overview'
             },
             'powertrain-overview': {
                 title: 'Powertrain Overview',
-                content: this.generatePowertrainOverview(),
+                content: this.generateOverviewContent('powertrain'),
                 type: 'overview'
             },
             'vd-overview': {
                 title: 'Vehicle Dynamics Overview',
-                content: this.generateVDOverview(),
+                content: this.generateOverviewContent('vd'),
                 type: 'overview'
             },
             'business-overview': {
                 title: 'Business Overview',
-                content: this.generateBusinessOverview(),
+                content: this.generateOverviewContent('business'),
                 type: 'overview'
             }
         };
@@ -167,12 +167,34 @@ class Wiki {
             content += this.generateTemplateContent(pageId);
         }
 
-        // Add uploads if any
+        // Add uploads if any, then comments
         this.loadPageUploads(pageId).then(uploads => {
             if (uploads.length > 0) {
                 content += this.generateUploadsSection(uploads);
             }
+            // Append comments container
+            content += `
+                <div id="commentsSection" class="comments-section" style="margin-top: 2rem;">
+                    <h2>💬 Comments</h2>
+                    <div id="commentsList" class="comments-list" style="margin: 1rem 0;"></div>
+                    ${auth.isUserAuthenticated() ? `
+                    <form id="commentForm" class="comment-form" style="display: flex; gap: 0.5rem; align-items: flex-start;">
+                        <textarea id="commentInput" rows="3" placeholder="Write a comment..." style="flex:1; padding: 0.6rem; border: 1px solid #e1e5e9; border-radius: 6px;"></textarea>
+                        <button type="submit" class="btn btn-primary btn-small">Post</button>
+                    </form>
+                    ` : `<div class="error-message">Please log in to comment.</div>`}
+                </div>
+            `;
             contentArea.innerHTML = content;
+            // Load and render comments, wire form
+            this.refreshComments(pageId);
+            const form = document.getElementById('commentForm');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.submitComment(pageId);
+                });
+            }
         }).catch(() => {
             contentArea.innerHTML = content;
         });
@@ -192,6 +214,30 @@ class Wiki {
                     <li><strong>References:</strong> External resources and standards</li>
                     <li><strong>Updates:</strong> Version history and change logs</li>
                 </ul>
+            </div>
+        `;
+
+        // Generic starter content with random image and simple SVG graph
+        const sampleImages = [
+            'https://images.unsplash.com/photo-1520975922284-5f7f4f3c4f87?q=80&w=1200&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1518306727298-4c17e1bf6948?q=80&w=1200&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1200&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1556125578-0919013d0532?q=80&w=1200&auto=format&fit=crop'
+        ];
+        const randomImg = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+        content += `
+            <div class="template-card">
+                <div class="template-title">🖼️ Sample Image</div>
+                <img src="${randomImg}" alt="Sample" />
+            </div>
+            <div class="template-card">
+                <div class="template-title">📈 Sample Performance Graph</div>
+                <svg viewBox="0 0 300 120" width="100%" height="120" xmlns="http://www.w3.org/2000/svg" style="background:#fafbfc;border:1px solid #e1e5e9;border-radius:6px;">
+                    <polyline fill="none" stroke="#667eea" stroke-width="3" points="0,90 40,80 80,70 120,60 160,50 200,40 240,35 280,30" />
+                    <line x1="0" y1="100" x2="300" y2="100" stroke="#e1e5e9" />
+                    <line x1="0" y1="0" x2="0" y2="100" stroke="#e1e5e9" />
+                </svg>
+                <p style="color:#666;font-size:0.9rem;">Example trend line for initial documentation.</p>
             </div>
         `;
 
@@ -510,6 +556,77 @@ class Wiki {
         });
 
         return content;
+    }
+
+    async refreshComments(pageId) {
+        try {
+            const res = await fetch(`/api/pages/${pageId}/comments`);
+            const comments = res.ok ? await res.json() : [];
+            this.renderComments(comments);
+        } catch (e) {
+            console.error('Comments load error', e);
+            this.renderComments([]);
+        }
+    }
+
+    renderComments(comments) {
+        const list = document.getElementById('commentsList');
+        if (!list) return;
+        if (!comments || comments.length === 0) {
+            list.innerHTML = '<div class="text-center" style="color:#666;">No comments yet. Be the first to comment.</div>';
+            return;
+        }
+        let html = '';
+        comments.forEach(c => {
+            html += `
+                <div class="comment-item" style="display:flex; gap:0.8rem; margin:0.6rem 0;">
+                    <div class="avatar" style="width:36px;height:36px;border-radius:50%;background:#667eea22;display:flex;align-items:center;justify-content:center;color:#667eea;font-weight:700;">
+                        ${c.username ? c.username.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <strong>${c.username}</strong>
+                            <span style="font-size:0.8rem;color:#999;">${new Date(c.created_at).toLocaleString()}</span>
+                        </div>
+                        <div style="margin-top:0.2rem;">${this.escapeHtml(c.comment)}</div>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    }
+
+    async submitComment(pageId) {
+        const input = document.getElementById('commentInput');
+        if (!input) return;
+        const text = input.value.trim();
+        if (text.length === 0) return;
+        try {
+            const res = await fetch(`/api/pages/${pageId}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ comment: text })
+            });
+            if (res.ok) {
+                input.value = '';
+                this.refreshComments(pageId);
+            } else {
+                const err = await res.json();
+                auth.showError(err.error || 'Failed to post comment');
+            }
+        } catch (e) {
+            console.error('Comment post error', e);
+            auth.showError('Network error');
+        }
+    }
+
+    escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     formatFileSize(bytes) {

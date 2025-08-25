@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UWA Motorsport Engineering Wiki</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo::before {
+            content: "⚡";
+            font-size: 2rem;
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .role-selector {
+            padding: 0.5rem 1rem;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            background: white;
+            color: #667eea;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .role-selector:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .search-box {
+            padding: 0.5rem 1rem;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            width: 300px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 6rem 1.5rem 2rem;
+            overflow-y: auto;
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-header {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            padding: 0.5rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .nav-header:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateX(5px);
+        }
+
+        .nav-header.collapsed::after {
+            content: " ▶";
+        }
+
+        .nav-header:not(.collapsed)::after {
+            content: " ▼";
+        }
+
+        .nav-items {
+            margin-left: 1rem;
+            border-left: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .nav-items.hidden {
+            display: none;
+        }
+
+        .nav-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            margin: 0.2rem 0;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            transform: translateX(3px);
+        }
+
+        .nav-item.active {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .nav-item.restricted {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .nav-item.restricted::after {
+            content: " 🔒";
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 6rem 2rem 2rem;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            min-height: calc(100vh - 8rem);
+        }
+
+        .page-header {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .page-subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .edit-controls {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Content Templates */
+        .template-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .template-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        }
+
+        .template-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .goal-tracker {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            border-left: 4px solid #667eea;
+            margin: 0.5rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .goal-progress {
+            width: 100%;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }
+
+        .goal-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .learning-resource {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .learning-resource:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateX(5px);
+        }
+
+        .difficulty-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .difficulty-beginner { background: #d4edda; color: #155724; }
+        .difficulty-intermediate { background: #fff3cd; color: #856404; }
+        .difficulty-advanced { background: #f8d7da; color: #721c24; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin: 1rem 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 0.7rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .permission-denied {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+
+        .permission-denied::before {
+            content: "🔒";
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                padding-top: 5rem;
+                height: auto;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">UWA Motorsport Wiki</div>
+        <div class="user-controls">
+            <select class="role-selector" id="roleSelector">
+                <option value="guest">Guest</option>
+                <option value="member">Team Member</option>
+                <option value="management">Management</option>
+            </select>
+            <select id="subteamSelector" style="display: none;" class="role-selector">
+                <option value="">Select Subteam</option>
+                <option value="aerodynamics">Aerodynamics</option>
+                <option value="business">Business</option>
+                <option value="chassis">Chassis</option>
+                <option value="electrical">Electrical</option>
+                <option value="powertrain">Powertrain</option>
+                <option value="vehicle-dynamics">Vehicle Dynamics</option>
+            </select>
+            <input type="text" class="search-box" id="searchBox" placeholder="Search wiki...">
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="nav-section">
+                <div class="nav-header" onclick="toggleSection('management')">Management</div>
+                <div class="nav-items" id="management-items">
+                    <div class="nav-item" onclick="showPage('management-overview')">Team Vision & Strategy</div>
+                    <div class="nav-item" onclick="showPage('management-meetings')">Meeting Notes</div>
+                    <div class="nav-item" onclick="showPage('management-goals')">Subteam Goals</div>
+                    <div class="nav-item" onclick="showPage('management-policies')">Policies & Decisions</div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-header" onclick="toggleSection('aerodynamics')">Aerodynamics</div>
+                <div class="nav-items" id="aerodynamics-items">
+                    <div class="nav-item" onclick="showPage('aero-overview')">Overview & Goals</div>
+                    <div class="nav-item" onclick="showPage('aero-design')">Aero Package Design</div>
+                    <div class="nav-item" onclick="showPage('aero-cfd')">CFD Resources</div>
+                    <div class="nav-item" onclick="showPage('aero-manufacturing')">Manufacturing Guides</div>
+                    <div class="nav-item" onclick="showPage('aero-learning')">Learning Resources</div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-header" onclick="toggleSection('business')">Business</div>
+                <div class="nav-items" id="business-items">
+                    <div class="nav-item" onclick="showPage('business-overview')">Overview & Goals</div>
+                    <div class="nav-item" onclick="showPage('business-sponsorship')">Sponsorship Management</div>
+                    <div class="nav-item" onclick="showPage('business-social')">Social Media & Outreach</div>
+                    <div class="nav-item" onclick="showPage('business-plan')">Business Plan</div>
+                    <div class="nav-item" onclick="showPage('business-learning')">Learning Resources</div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-header" onclick="toggleSection('chassis')">Chassis</div>
+                <div class="nav-items" id="chassis-items">
+                    <div class="nav-item" onclick="showPage('chassis-overview')">Overview & Goals</div>
+                    <div class="nav-item" onclick="showPage('chassis-structural')">Structural Design</div>
+                    <div class="nav-item" onclick="showPage('chassis-cad')">CAD Standards</div>
+                    <div class="nav-item" onclick="showPage('chassis-manufacturing')">Manufacturing Methods</div>
+                    <div class="nav-item" onclick="showPage('chassis-learning')">Learning Resources</div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-header" onclick="toggleSection('electrical')">Electrical</div>
+                <div class="nav-items" id="electrical-items">
+                    <div class="nav-item" onclick="showPage('electrical-overview')">Overview & Goals</div>
+                    <div class="nav-item" onclick="showPage('electrical-systems')">HV/LV Systems</div>
+                    <div class="nav-item" onclick="showPage('electrical-pcb')">PCB & Firmware</div>
+                    <div class="nav-item" onclick="showPage('electrical-safety')">Safety & Testing</div>
+                    <div class="nav-item" onclick="showPage('electrical-learning')">Learning Resources</div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-header" onclick="toggleSection('powertrain')">Powertrain</div>
+                <div class="nav-items" id="powertrain-items">
+                    <div class="nav-item" onclick="showPage('powertrain-overview')">Overview & Goals</div>
+                    <div class="nav-item" onclick="showPage('powertrain-motor')">Motor & Inverter</div>
+                    <div class="nav-item" onclick="showPage('powertrain-cooling')">Cooling Systems</div>
+                    <div class="nav-item" onclick="showPage('powertrain-testing')">Dyno Testing</div>
+                    <div class="nav-item" onclick="showPage('powertrain-learning')">Learning Resources</div>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-header" onclick="toggleSection('vehicle-dynamics')">Vehicle Dynamics</div>
+                <div class="nav-items" id="vehicle-dynamics-items">
+                    <div class="nav-item" onclick="showPage('vd-overview')">Overview & Goals</div>
+                    <div class="nav-item" onclick="showPage('vd-suspension')">Suspension & Steering</div>
+                    <div class="nav-item" onclick="showPage('vd-simulation')">Simulation Resources</div>
+                    <div class="nav-item" onclick="showPage('vd-data')">Data Acquisition</div>
+                    <div class="nav-item" onclick="showPage('vd-learning')">Learning Resources</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="content-area" id="contentArea">
+                <!-- Content will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editModal')">&times;</span>
+            <h2>Edit Page</h2>
+            <div class="form-group">
+                <label for="pageTitle">Page Title:</label>
+                <input type="text" id="pageTitle">
+            </div>
+            <div class="form-group">
+                <label for="pageContent">Content:</label>
+                <textarea id="pageContent" rows="10"></textarea>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary" onclick="savePage()">Save Changes</button>
+                <button class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="goalModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('goalModal')">&times;</span>
+            <h2>Add New Goal</h2>
+            <div class="form-group">
+                <label for="goalTitle">Goal Title:</label>
+                <input type="text" id="goalTitle">
+            </div>
+            <div class="form-group">
+                <label for="goalDescription">Description:</label>
+                <textarea id="goalDescription" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="goalOwner">Owner:</label>
+                <input type="text" id="goalOwner">
+            </div>
+            <div class="form-group">
+                <label for="goalDueDate">Due Date:</label>
+                <input type="date" id="goalDueDate">
+            </div>
+            <div class="form-group">
+                <label for="goalProgress">Progress (%):</label>
+                <input type="number" id="goalProgress" min="0" max="100" value="0">
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary" onclick="saveGoal()">Add Goal</button>
+                <button class="btn btn-secondary" onclick="closeModal('goalModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentUser = 'guest';
+        let currentSubteam = '';
+        let currentPage = 'management-overview';
+        let wikiData = {};
+
+        // Initialize wiki data
+        function initializeWikiData() {
+            wikiData = {
+                'management-overview': {
+                    title: 'Team Vision & Strategy',
+                    content: 'Welcome to UWA Motorsport Engineering Wiki. Our mission is to design, build, and race electric formula cars while developing engineering talent.',
+                    restricted: true
+                },
+                'aero-overview': {
+                    title: 'Aerodynamics Overview & Goals',
+                    content: 'The aerodynamics team focuses on developing efficient aero packages for maximum downforce and minimal drag.',
+                    goals: [
+                        { title: 'Complete CFD Analysis', description: 'Finish comprehensive CFD analysis of new wing designs', owner: 'Sarah Chen', dueDate: '2025-09-15', progress: 75 },
+                        { title: 'Manufacturing Documentation', description: 'Create detailed manufacturing guides for all aero components', owner: 'Mike Johnson', dueDate: '2025-09-30', progress: 40 }
+                    ]
+                },
+                'business-overview': {
+                    title: 'Business Overview & Goals',
+                    content: 'The business team manages sponsorships, finances, social media, and competition logistics.',
+                    goals: [
+                        { title: 'Secure $50K Sponsorship', description: 'Reach sponsorship target for 2025 season', owner: 'Emma Wilson', dueDate: '2025-10-01', progress: 60 },
+                        { title: 'Social Media Growth', description: 'Increase Instagram followers to 5K', owner: 'James Liu', dueDate: '2025-12-31', progress: 30 }
+                    ]
+                },
+                'chassis-overview': {
+                    title: 'Chassis Overview & Goals',
+                    content: 'The chassis team designs and manufactures the vehicle structure including monocoque, spaceframe, and crash structures.',
+                    goals: [
+                        { title: 'Monocoque Design', description: 'Complete carbon fiber monocoque design and testing', owner: 'David Park', dueDate: '2025-11-01', progress: 85 },
+                        { title: 'Crash Test Prep', description: 'Prepare crash structures for regulatory testing', owner: 'Lisa Zhang', dueDate: '2025-10-15', progress: 20 }
+                    ]
+                }
+            };
+        }
+
+        // User role management
+        document.getElementById('roleSelector').addEventListener('change', function() {
+            currentUser = this.value;
+            updatePermissions();
+            showSubteamSelector();
+            showPage(currentPage);
+        });
+
+        document.getElementById('subteamSelector').addEventListener('change', function() {
+            currentSubteam = this.value;
+            updatePermissions();
+        });
+
+        function showSubteamSelector() {
+            const subteamSelector = document.getElementById('subteamSelector');
+            if (currentUser === 'member') {
+                subteamSelector.style.display = 'inline-block';
+            } else {
+                subteamSelector.style.display = 'none';
+            }
+        }
+
+        function updatePermissions() {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                const page = item.getAttribute('onclick')?.match(/showPage\('([^']+)'\)/)?.[1];
+                if (page) {
+                    item.classList.remove('restricted');
+                    if (!canAccessPage(page)) {
+                        item.classList.add('restricted');
+                    }
+                }
+            });
+        }
+
+        function canAccessPage(pageId) {
+            if (currentUser === 'management') return true;
+            if (currentUser === 'guest') {
+                return pageId.includes('-overview') || pageId.includes('-learning');
+            }
+            if (currentUser === 'member') {
+                if (pageId.startsWith('management-')) return false;
+                if (currentSubteam && !pageId.includes(currentSubteam) && !pageId.includes('-learning') && !pageId.includes('-overview')) {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function canEditPage(pageId) {
+            if (currentUser === 'guest') return false;
+            if (currentUser === 'management') return true;
+            if (currentUser === 'member') {
+                if (pageId.startsWith('management-')) return false;
+                return currentSubteam && pageId.includes(currentSubteam);
+            }
+            return false;
+        }
+
+        // Navigation functions
+        function toggleSection(sectionId) {
+            const items = document.getElementById(sectionId + '-items');
+            const header = items.previousElementSibling;
+            
+            if (items.classList.contains('hidden')) {
+                items.classList.remove('hidden');
+                header.classList.remove('collapsed');
+            } else {
+                items.classList.add('hidden');
+                header.classList.add('collapsed');
+            }
+        }
+
+        function showPage(pageId) {
+            if (!canAccessPage(pageId)) {
+                showPermissionDenied();
+                return;
+            }
+
+            currentPage = pageId;
+            
+            // Update active navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const activeItem = document.querySelector(`[onclick="showPage('${pageId}')"]`);
+            if (activeItem) {
+                activeItem.classList.add('active');
+            }
+
+            // Load page content
+            loadPageContent(pageId);
+        }
+
+        function loadPageContent(pageId) {
+            const contentArea = document.getElementById('contentArea');
+            const pageData = wikiData[pageId];
+            
+            if (!pageData) {
+                contentArea.innerHTML = generateDefaultPageContent(pageId);
+                return;
+            }
+
+            let content = `
+                <div class="page-header">
+                    <h1 class="page-title">${pageData.title}</h1>
+                    <p class="page-subtitle">Last updated: ${new Date().toLocaleDateString()}</p>
+                </div>
+            `;
+
+            if (canEditPage(pageId)) {
+                content += `
+                    <div class="edit-controls">
+                        <button class="btn btn-primary" onclick="editPage('${pageId}')">Edit Page</button>
+                        ${pageId.includes('-overview') ? `<button class="btn btn-secondary" onclick="addGoal('${pageId}')">Add Goal</button>` : ''}
+                    </div>
+                `;
+            }
+
+            content += `<div class="page-content">${pageData.content}</div>`;
+
+            // Add goals section if available
+            if (pageData.goals && pageData.goals.length > 0) {
+                content += '<h2>Current Goals</h2>';
+                pageData.goals.forEach(goal => {
+                    content += generateGoalCard(goal);
+                });
+            }
+
+            // Add learning resources for learning pages
+            if (pageId.includes('-learning')) {
+                content += generateLearningResources(pageId);
+            }
+
+            contentArea.innerHTML = content;
+        }
+
+        function generateDefaultPageContent(pageId) {
+            const titles = {
+                'management-overview': 'Team Vision & Strategy',
+                'management-meetings': 'Meeting Notes & Planning',
+                'management-goals': 'Subteam Goals Tracking',
+                'management-policies': 'Policies & Decision Records',
+                'aero-design': 'Aero Package Design',
+                'aero-cfd': 'CFD Resources & Learnings',
+                'aero-manufacturing': 'Manufacturing Guides',
+                'business-sponsorship': 'Sponsorship Management',
+                'business-social': 'Social Media & Outreach',
+                'business-plan': 'Business Plan & Cost Reports',
+                'chassis-structural': 'Structural Design Guides',
+                'chassis-cad': 'CAD Standards & Design Rules',
+                'chassis-manufacturing': 'Manufacturing Methods',
+                'electrical-systems': 'HV/LV System Documentation',
+                'electrical-pcb': 'PCB Schematics & Firmware',
+                'electrical-safety': 'Safety Training & Testing',
+                'powertrain-motor': 'Motor & Inverter Documentation',
+                'powertrain-cooling': 'Cooling Systems & Drivetrain',
+                'powertrain-testing': 'Dyno Testing Results',
+                'vd-suspension': 'Suspension Geometry & Steering',
+                'vd-simulation': 'Simulation Resources & Results',
+                'vd-data': 'Driver Feedback & Data Acquisition'
+            };
+
+            const title = titles[pageId] || 'Wiki Page';
+            
+            return `
+                <div class="page-header">
+                    <h1 class="page-title">${title}</h1>
+                    <p class="page-subtitle">Documentation coming soon...</p>
+                </div>
+                ${canEditPage(pageId) ? `
+                    <div class="edit-controls">
+                        <button class="btn btn-primary" onclick="editPage('${pageId}')">Edit Page</button>
+                        ${pageId.includes('-overview') ? `<button class="btn btn-secondary" onclick="addGoal('${pageId}')">Add Goal</button>` : ''}
+                    </div>
+                ` : ''}
+                <div class="template-card">
+                    <div class="template-title">📋 Documentation Template</div>
+                    <p>This page is ready for content! Use the edit button above to add:</p>
+                    <ul style="margin: 1rem 0; padding-left: 2rem;">
+                        <li><strong>Overview:</strong> Purpose and scope of this documentation</li>
+                        <li><strong>Procedures:</strong> Step-by-step guides and best practices</li>
+                        <li><strong>References:</strong> External resources and standards</li>
+                        <li><strong>Updates:</strong> Version history and change logs</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        function generateGoalCard(goal) {
+            return `
+                <div class="goal-tracker">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; color: #667eea;">${goal.title}</h3>
+                        <span style="font-size: 0.9rem; color: #666;">Due: ${goal.dueDate}</span>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: #555;">${goal.description}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.9rem; color: #666;">Owner: ${goal.owner}</span>
+                        <span style="font-size: 0.9rem; font-weight: 600; color: #667eea;">${goal.progress}% Complete</span>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-fill" style="width: ${goal.progress}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateLearningResources(pageId) {
+            const resources = {
+                'aero-learning': [
+                    { title: 'Introduction to CFD Analysis', difficulty: 'beginner', prereqs: 'Basic fluid mechanics', link: '#' },
+                    { title: 'Advanced Wing Design Principles', difficulty: 'advanced', prereqs: 'CFD basics, aerodynamics theory', link: '#' },
+                    { title: 'Manufacturing Carbon Fiber Components', difficulty: 'intermediate', prereqs: 'Basic composites knowledge', link: '#' }
+                ],
+                'business-learning': [
+                    { title: 'Sponsorship Proposal Writing', difficulty: 'beginner', prereqs: 'None', link: '#' },
+                    { title: 'Cost Report Analysis', difficulty: 'intermediate', prereqs: 'Basic accounting', link: '#' },
+                    { title: 'Social Media Strategy for STEM', difficulty: 'beginner', prereqs: 'Basic marketing knowledge', link: '#' }
+                ],
+                'chassis-learning': [
+                    { title: 'Composite Monocoque Design', difficulty: 'advanced', prereqs: 'Structural analysis, CAD proficiency', link: '#' },
+                    { title: 'FEA for Crashworthiness', difficulty: 'advanced', prereqs: 'FEA fundamentals, safety regulations', link: '#' },
+                    { title: 'CAD Best Practices', difficulty: 'beginner', prereqs: 'Basic CAD knowledge', link: '#' }
+                ],
+                'electrical-learning': [
+                    { title: 'High Voltage Safety Training', difficulty: 'beginner', prereqs: 'None - Required for all', link: '#' },
+                    { title: 'PCB Design Fundamentals', difficulty: 'intermediate', prereqs: 'Circuit analysis', link: '#' },
+                    { title: 'Embedded Systems Programming', difficulty: 'advanced', prereqs: 'C programming, microcontrollers', link: '#' }
+                ],
+                'powertrain-learning': [
+                    { title: 'Electric Motor Principles', difficulty: 'beginner', prereqs: 'Basic physics, electromagnetics', link: '#' },
+                    { title: 'Thermal Management Systems', difficulty: 'intermediate', prereqs: 'Heat transfer fundamentals', link: '#' },
+                    { title: 'Dyno Testing Procedures', difficulty: 'advanced', prereqs: 'Motor theory, data analysis', link: '#' }
+                ],
+                'vd-learning': [
+                    { title: 'Suspension Kinematics', difficulty: 'intermediate', prereqs: 'Mechanics, linear algebra', link: '#' },
+                    { title: 'Vehicle Simulation Software', difficulty: 'advanced', prereqs: 'Vehicle dynamics theory', link: '#' },
+                    { title: 'Data Acquisition Basics', difficulty: 'beginner', prereqs: 'Basic electronics', link: '#' }
+                ]
+            };
+
+            const pageResources = resources[pageId] || [];
+            
+            let content = '<h2>📚 Learning Resources</h2>';
+            
+            pageResources.forEach(resource => {
+                content += `
+                    <div class="learning-resource">
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0 0 0.5rem 0; color: #667eea;">${resource.title}</h4>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">Prerequisites: ${resource.prereqs}</p>
+                        </div>
+                        <div class="difficulty-badge difficulty-${resource.difficulty}">
+                            ${resource.difficulty.charAt(0).toUpperCase() + resource.difficulty.slice(1)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            return content;
+        }
+
+        function showPermissionDenied() {
+            const contentArea = document.getElementById('contentArea');
+            contentArea.innerHTML = `
+                <div class="permission-denied">
+                    <h2>Access Restricted</h2>
+                    <p>You don't have permission to view this content.</p>
+                    <p>Current role: <strong>${currentUser}</strong></p>
+                    ${currentUser === 'member' ? `<p>Subteam: <strong>${currentSubteam || 'Not selected'}</strong></p>` : ''}
+                </div>
+            `;
+        }
+
+        // Modal functions
+        function editPage(pageId) {
+            if (!canEditPage(pageId)) {
+                alert('You do not have permission to edit this page.');
+                return;
+            }
+
+            const pageData = wikiData[pageId] || { title: '', content: '' };
+            document.getElementById('pageTitle').value = pageData.title || '';
+            document.getElementById('pageContent').value = pageData.content || '';
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function addGoal(pageId) {
+            if (!canEditPage(pageId)) {
+                alert('You do not have permission to add goals.');
+                return;
+            }
+
+            // Clear form
+            document.getElementById('goalTitle').value = '';
+            document.getElementById('goalDescription').value = '';
+            document.getElementById('goalOwner').value = '';
+            document.getElementById('goalDueDate').value = '';
+            document.getElementById('goalProgress').value = 0;
+            
+            document.getElementById('goalModal').style.display = 'block';
+        }
+
+        function savePage() {
+            const title = document.getElementById('pageTitle').value;
+            const content = document.getElementById('pageContent').value;
+            
+            if (!wikiData[currentPage]) {
+                wikiData[currentPage] = {};
+            }
+            
+            wikiData[currentPage].title = title;
+            wikiData[currentPage].content = content;
+            
+            closeModal('editModal');
+            showPage(currentPage);
+            
+            // Show success message
+            showNotification('Page updated successfully!', 'success');
+        }
+
+        function saveGoal() {
+            const title = document.getElementById('goalTitle').value;
+            const description = document.getElementById('goalDescription').value;
+            const owner = document.getElementById('goalOwner').value;
+            const dueDate = document.getElementById('goalDueDate').value;
+            const progress = parseInt(document.getElementById('goalProgress').value);
+            
+            if (!title || !description || !owner || !dueDate) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            if (!wikiData[currentPage]) {
+                wikiData[currentPage] = {};
+            }
+            
+            if (!wikiData[currentPage].goals) {
+                wikiData[currentPage].goals = [];
+            }
+            
+            wikiData[currentPage].goals.push({
+                title: title,
+                description: description,
+                owner: owner,
+                dueDate: dueDate,
+                progress: progress
+            });
+            
+            closeModal('goalModal');
+            showPage(currentPage);
+            
+            showNotification('Goal added successfully!', 'success');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: ${type === 'success' ? '#d4edda' : '#f8d7da'};
+                color: ${type === 'success' ? '#155724' : '#721c24'};
+                padding: 1rem 2rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                z-index: 3000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+                style.remove();
+            }, 3000);
+        }
+
+        // Search functionality
+        document.getElementById('searchBox').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            if (query.length < 2) return;
+            
+            // Simple search through page titles and content
+            const results = [];
+            Object.keys(wikiData).forEach(pageId => {
+                const page = wikiData[pageId];
+                if (page.title && page.title.toLowerCase().includes(query)) {
+                    results.push({ pageId, title: page.title, type: 'title' });
+                }
+                if (page.content && page.content.toLowerCase().includes(query)) {
+                    results.push({ pageId, title: page.title, type: 'content' });
+                }
+            });
+            
+            // Show search results (simplified implementation)
+            if (results.length > 0) {
+                console.log('Search results:', results);
+            }
+        });
+
+        // Onboarding function for new members
+        function onboardNewMember(subteam) {
+            const onboardingContent = {
+                aerodynamics: {
+                    welcomeMessage: "Welcome to the Aerodynamics team! You'll be working on designing and optimizing our car's aerodynamic package.",
+                    firstSteps: [
+                        "Complete basic CFD training modules",
+                        "Review current aero package designs",
+                        "Attend weekly aero team meetings (Wednesdays 3PM)",
+                        "Get familiar with ANSYS Fluent software"
+                    ],
+                    resources: ['aero-learning', 'aero-design'],
+                    mentor: "Senior Aero Engineer"
+                },
+                business: {
+                    welcomeMessage: "Welcome to the Business team! You'll help manage sponsorships, finances, and team outreach.",
+                    firstSteps: [
+                        "Review current sponsorship portfolio",
+                        "Learn cost report requirements",
+                        "Join social media content planning",
+                        "Attend business meetings (Mondays 4PM)"
+                    ],
+                    resources: ['business-learning', 'business-sponsorship'],
+                    mentor: "Business Team Lead"
+                },
+                chassis: {
+                    welcomeMessage: "Welcome to the Chassis team! You'll work on structural design and manufacturing of the car's frame.",
+                    firstSteps: [
+                        "Complete CAD software training",
+                        "Review safety regulations",
+                        "Learn composite manufacturing basics",
+                        "Attend design reviews (Fridays 2PM)"
+                    ],
+                    resources: ['chassis-learning', 'chassis-structural'],
+                    mentor: "Chief Design Engineer"
+                }
+            };
+
+            return onboardingContent[subteam] || {
+                welcomeMessage: "Welcome to UWA Motorsport!",
+                firstSteps: ["Complete general safety training", "Attend team meetings"],
+                resources: [],
+                mentor: "Team Manager"
+            };
+        }
+
+        // Initialize the application
+        function initialize() {
+            initializeWikiData();
+            showPage('management-overview');
+            updatePermissions();
+            
+            // Close modals when clicking outside
+            window.onclick = function(event) {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            };
+        }
+
+        // Management functions for goal tracking
+        function updateSubteamGoals(subteam, goals) {
+            if (currentUser !== 'management') {
+                alert('Only management can update subteam goals.');
+                return;
+            }
+            
+            const pageId = subteam + '-overview';
+            if (!wikiData[pageId]) {
+                wikiData[pageId] = { title: subteam.charAt(0).toUpperCase() + subteam.slice(1) + ' Overview', content: '' };
+            }
+            
+            wikiData[pageId].goals = goals;
+            showNotification('Subteam goals updated successfully!', 'success');
+        }
+
+        // Version control simulation (simplified)
+        function saveVersion(pageId) {
+            const timestamp = new Date().toISOString();
+            const versionKey = pageId + '_v_' + timestamp;
+            
+            // In a real implementation, this would save to a backend
+            localStorage.setItem(versionKey, JSON.stringify(wikiData[pageId]));
+        }
+
+        function getVersionHistory(pageId) {
+            // In a real implementation, this would fetch from backend
+            const versions = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(pageId + '_v_')) {
+                    versions.push({
+                        timestamp: key.split('_v_')[1],
+                        data: JSON.parse(localStorage.getItem(key))
+                    });
+                }
+            }
+            return versions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initialize);
+
+        // Export functions for testing/debugging
+        window.wikiDebug = {
+            onboardNewMember,
+            updateSubteamGoals,
+            canAccessPage,
+            canEditPage,
+            currentUser: () => currentUser,
+            currentPage: () => currentPage,
+            wikiData: () => wikiData
+        };
+    </script>
+</body>
+</html>

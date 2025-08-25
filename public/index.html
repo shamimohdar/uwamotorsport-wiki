@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UWA Motorsport Engineering Wiki</title>
+    <link rel="stylesheet" href="/public/css/styles.css">
+    <link rel="stylesheet" href="/public/css/auth.css">
+    <link rel="stylesheet" href="/public/css/editor.css">
+    <link rel="stylesheet" href="/public/css/search.css">
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Login to UWA Motorsport Wiki</h2>
+                <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                <div class="demo-accounts">
+                    <h4>Demo Accounts:</h4>
+                    <p><strong>Guest:</strong> guest / guest123 (read-only)</p>
+                    <p><strong>Member:</strong> member / member123 (read/write)</p>
+                    <p><strong>Manager:</strong> manager / manager123 (admin)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application (hidden until authenticated) -->
+    <div id="app" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>UWA Motorsport Wiki</span>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" id="searchBox" class="search-box" placeholder="Search pages...">
+                <div id="searchResults" class="search-results"></div>
+            </div>
+            
+            <div class="user-controls">
+                <span id="userInfo" class="user-info"></span>
+                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <div class="container">
+            <!-- Sidebar -->
+            <nav class="sidebar">
+                <div class="nav-section">
+                    <div class="nav-header" onclick="toggleSection('management')">
+                        <span>🏢 Management</span>
+                    </div>
+                    <div id="management" class="nav-items">
+                        <div class="nav-item" onclick="showPage('management-overview')">Overview</div>
+                        <div class="nav-item" onclick="showPage('management-goals')">Goals & KPIs</div>
+                        <div class="nav-item" onclick="showPage('management-budget')">Budget</div>
+                        <div class="nav-item" onclick="showPage('management-schedule')">Schedule</div>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-header" onclick="toggleSection('aero')">
+                        <span>🛩️ Aerodynamics</span>
+                    </div>
+                    <div id="aero" class="nav-items">
+                        <div class="nav-item" onclick="showPage('aero-overview')">Overview</div>
+                        <div class="nav-item" onclick="showPage('aero-design')">Design</div>
+                        <div class="nav-item" onclick="showPage('aero-testing')">Testing</div>
+                        <div class="nav-item" onclick="showPage('aero-learning')">Learning</div>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-header" onclick="toggleSection('chassis')">
+                        <span>🏗️ Chassis</span>
+                    </div>
+                    <div id="chassis" class="nav-items">
+                        <div class="nav-item" onclick="showPage('chassis-overview')">Overview</div>
+                        <div class="nav-item" onclick="showPage('chassis-structural')">Structural</div>
+                        <div class="nav-item" onclick="showPage('chassis-manufacturing')">Manufacturing</div>
+                        <div class="nav-item" onclick="showPage('chassis-learning')">Learning</div>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-header" onclick="toggleSection('electrical')">
+                        <span>⚡ Electrical</span>
+                    </div>
+                    <div id="electrical" class="nav-items">
+                        <div class="nav-item" onclick="showPage('electrical-overview')">Overview</div>
+                        <div class="nav-item" onclick="showPage('electrical-systems')">Systems</div>
+                        <div class="nav-item" onclick="showPage('electrical-safety')">Safety</div>
+                        <div class="nav-item" onclick="showPage('electrical-learning')">Learning</div>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-header" onclick="toggleSection('powertrain')">
+                        <span>🔋 Powertrain</span>
+                    </div>
+                    <div id="powertrain" class="nav-items">
+                        <div class="nav-item" onclick="showPage('powertrain-overview')">Overview</div>
+                        <div class="nav-item" onclick="showPage('powertrain-motor')">Motor</div>
+                        <div class="nav-item" onclick="showPage('powertrain-battery')">Battery</div>
+                        <div class="nav-item" onclick="showPage('powertrain-learning')">Learning</div>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-header" onclick="toggleSection('vd')">
+                        <span>🚗 Vehicle Dynamics</span>
+                    </div>
+                    <div id="vd" class="nav-items">
+                        <div class="nav-item" onclick="showPage('vd-overview')">Overview</div>
+                        <div class="nav-item" onclick="showPage('vd-suspension')">Suspension</div>
+                        <div class="nav-item" onclick="showPage('vd-brakes')">Brakes</div>
+                        <div class="nav-item" onclick="showPage('vd-learning')">Learning</div>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-header" onclick="toggleSection('business')">
+                        <span>💼 Business</span>
+                    </div>
+                    <div id="business" class="nav-items">
+                        <div class="nav-item" onclick="showPage('business-overview')">Overview</div>
+                        <div class="nav-item" onclick="showPage('business-sponsorship')">Sponsorship</div>
+                        <div class="nav-item" onclick="showPage('business-outreach')">Outreach</div>
+                        <div class="nav-item" onclick="showPage('business-learning')">Learning</div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div id="contentArea" class="content-area">
+                    <div class="welcome-message">
+                        <h1>Welcome to UWA Motorsport Wiki</h1>
+                        <p>Select a page from the sidebar to get started.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Edit Page Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Edit Page</h2>
+                <span class="close" onclick="closeModal('editModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <div class="form-group">
+                        <label for="pageTitle">Page Title</label>
+                        <input type="text" id="pageTitle" name="pageTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pageContent">Content</label>
+                        <textarea id="pageContent" name="pageContent" rows="20" required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload File</h2>
+                <span class="close" onclick="closeModal('uploadModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="uploadType">File Type</label>
+                        <select id="uploadType" name="uploadType" required>
+                            <option value="image">Image</option>
+                            <option value="document">Document (PDF, DOCX, TXT)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="uploadFile">Select File</label>
+                        <input type="file" id="uploadFile" name="file" required>
+                        <small>Maximum file size: 10MB</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revisions Modal -->
+    <div id="revisionsModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Page Revisions</h2>
+                <span class="close" onclick="closeModal('revisionsModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="revisionsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/public/js/auth.js"></script>
+    <script src="/public/js/wiki.js"></script>
+    <script src="/public/js/editor.js"></script>
+    <script src="/public/js/search.js"></script>
+    <script src="/public/js/uploads.js"></script>
+    <script src="/public/js/app.js"></script>
+</body>
+</html>

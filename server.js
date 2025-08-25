@@ -20,8 +20,8 @@ app.use(helmet({
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'"],
-            imgSrc: ["'self'", "data:", "blob:"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "blob:", "https:"],
             fontSrc: ["'self'"],
             connectSrc: ["'self'"]
         }
@@ -116,7 +116,7 @@ db.serialize(() => {
 
     // Pages table
     db.run(`CREATE TABLE IF NOT EXISTS pages (
-        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         page_id TEXT UNIQUE NOT NULL,
         title TEXT NOT NULL,
         content TEXT,
@@ -148,6 +148,17 @@ db.serialize(() => {
         page_id TEXT,
         uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (uploaded_by) REFERENCES users(id)
+    )`);
+
+    // Comments table
+    db.run(`CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        page_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        username TEXT NOT NULL,
+        comment TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
 
     // Insert default users
@@ -405,6 +416,35 @@ app.get('/api/pages/:pageId/revisions', requireAuth, (req, res) => {
         }
         res.json(revisions);
     });
+});
+
+// Comments API
+app.get('/api/pages/:pageId/comments', requireAuth, (req, res) => {
+    const { pageId } = req.params;
+    db.all(`SELECT id, page_id, user_id, username, comment, created_at
+            FROM comments WHERE page_id = ? ORDER BY created_at DESC`, [pageId], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(rows);
+    });
+});
+
+app.post('/api/pages/:pageId/comments', requireAuth, (req, res) => {
+    const { pageId } = req.params;
+    const { comment } = req.body;
+    if (!comment || comment.trim().length === 0) {
+        return res.status(400).json({ error: 'Comment cannot be empty' });
+    }
+    const userId = req.session.userId;
+    const username = req.session.username;
+    db.run(`INSERT INTO comments (page_id, user_id, username, comment) VALUES (?, ?, ?, ?)`,
+        [pageId, userId, username, comment.trim()], function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Database error' });
+            }
+            res.json({ id: this.lastID, page_id: pageId, user_id: userId, username, comment: comment.trim() });
+        });
 });
 
 // Error handling middleware

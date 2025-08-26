@@ -149,16 +149,8 @@ class Wiki {
             </div>
         `;
 
-        // Add edit controls if user can edit
-        if (auth.canEditPage(pageId, auth.getCurrentRole(), auth.getCurrentSubteam())) {
-            content += `
-                <div class="edit-controls">
-                    <button class="btn btn-primary" onclick="wiki.editPage('${pageId}')">Edit Page</button>
-                    <button class="btn btn-secondary" onclick="wiki.showUploadModal('${pageId}')">Upload File</button>
-                    <button class="btn btn-secondary" onclick="wiki.showRevisions('${pageId}')">View Revisions</button>
-                </div>
-            `;
-        }
+        // Edit controls removed in favor of global Edit action and modal
+        // Intentionally left blank
 
         // Add page content
         if (pageData.content) {
@@ -198,6 +190,11 @@ class Wiki {
         }).catch(() => {
             contentArea.innerHTML = content;
         });
+        
+        // Update header Edit action visibility
+        if (window.app && typeof window.app.updateEditButtonVisibility === 'function') {
+            window.app.updateEditButtonVisibility();
+        }
     }
 
     generateTemplateContent(pageId) {

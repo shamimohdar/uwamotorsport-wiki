@@ -120,6 +120,11 @@ class Auth {
         
         // Update permissions
         this.updatePermissions();
+        
+        // Update Edit action visibility
+        if (window.app && typeof window.app.updateEditButtonVisibility === 'function') {
+            window.app.updateEditButtonVisibility();
+        }
     }
 
     clearCurrentUser() {
@@ -134,6 +139,11 @@ class Auth {
         
         // Reset permissions
         this.resetPermissions();
+        
+        // Update Edit action visibility
+        if (window.app && typeof window.app.updateEditButtonVisibility === 'function') {
+            window.app.updateEditButtonVisibility();
+        }
     }
 
     updatePermissions() {
@@ -142,6 +152,11 @@ class Auth {
         
         // Update navigation items based on role
         this.updateNavigationPermissions(role, subteam);
+        
+        // Update Edit action visibility for current page
+        if (window.app && typeof window.app.updateEditButtonVisibility === 'function') {
+            window.app.updateEditButtonVisibility();
+        }
     }
 
     updateNavigationPermissions(role, subteam) {

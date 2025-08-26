@@ -55,6 +55,7 @@
             
             <div class="user-controls">
                 <span id="userInfo" class="user-info"></span>
+                <button id="editActionBtn" class="btn btn-primary" style="display:none;">Edit</button>
                 <button id="logoutBtn" class="btn btn-secondary">Logout</button>
             </div>
         </header>
@@ -204,11 +205,16 @@
                     </div>
                     <div class="form-group">
                         <label for="uploadFile">Select File</label>
-                        <input type="file" id="uploadFile" name="file" required>
+                        <input type="file" id="uploadFile" name="file">
                         <small>Maximum file size: 10MB</small>
                     </div>
+                    <div class="form-group">
+                        <label for="embedLink">Embed link (optional)</label>
+                        <input type="url" id="embedLink" placeholder="https://docs.google.com/...">
+                        <small>Paste a Google Docs/Drive or other embeddable URL. If provided, file selection is optional.</small>
+                    </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
                         <button type="button" class="btn btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
                     </div>
                 </form>
@@ -225,6 +231,24 @@
             </div>
             <div class="modal-body">
                 <div id="revisionsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Options Modal -->
+    <div id="editOptionsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>What would you like to do?</h2>
+                <span class="close" onclick="closeModal('editOptionsModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="option-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+                    <button id="optEditText" class="btn btn-primary">Write/Edit Text</button>
+                    <button id="optUploadImage" class="btn btn-secondary">Upload an Image</button>
+                    <button id="optEmbedDoc" class="btn btn-secondary">Embed a Document</button>
+                    <button id="optViewRevisions" class="btn">View Revisions</button>
+                </div>
             </div>
         </div>
     </div>

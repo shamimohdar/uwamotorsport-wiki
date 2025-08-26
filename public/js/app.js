@@ -28,6 +28,9 @@ class App {
         // Setup keyboard shortcuts
         this.setupKeyboardShortcuts();
         
+        // Setup global Edit action
+        this.setupEditAction();
+        
         console.log('UWA Motorsport Wiki initialized successfully');
     }
 
@@ -172,6 +175,83 @@ class App {
                 }
             }
         });
+    }
+
+    setupEditAction() {
+        const editBtn = document.getElementById('editActionBtn');
+        if (!editBtn) return;
+
+        // Click opens options modal
+        editBtn.addEventListener('click', () => {
+            const modal = document.getElementById('editOptionsModal');
+            if (modal) modal.style.display = 'block';
+        });
+
+        // Wire option buttons
+        const optEditText = document.getElementById('optEditText');
+        const optUploadImage = document.getElementById('optUploadImage');
+        const optEmbedDoc = document.getElementById('optEmbedDoc');
+        const optViewRevisions = document.getElementById('optViewRevisions');
+
+        const getCurrentPage = () => (window.wiki ? window.wiki.getCurrentPage() : null);
+
+        if (optEditText) {
+            optEditText.addEventListener('click', () => {
+                const page = getCurrentPage();
+                if (!page) return;
+                // Open existing edit modal flow
+                if (window.wiki) window.wiki.editPage(page);
+                closeModal('editOptionsModal');
+            });
+        }
+
+        if (optUploadImage) {
+            optUploadImage.addEventListener('click', () => {
+                const page = getCurrentPage();
+                if (!page) return;
+                if (window.uploads) window.uploads.showUploadModal(page);
+                closeModal('editOptionsModal');
+            });
+        }
+
+        if (optEmbedDoc) {
+            optEmbedDoc.addEventListener('click', () => {
+                const page = getCurrentPage();
+                if (!page) return;
+                // Reuse upload modal but preset to document mode
+                const uploadType = document.getElementById('uploadType');
+                if (window.uploads) {
+                    window.uploads.showUploadModal(page);
+                    if (uploadType) {
+                        uploadType.value = 'document';
+                        if (typeof window.uploads.updateFileInputAccept === 'function') {
+                            window.uploads.updateFileInputAccept('document');
+                        }
+                    }
+                }
+                closeModal('editOptionsModal');
+            });
+        }
+
+        if (optViewRevisions) {
+            optViewRevisions.addEventListener('click', () => {
+                const page = getCurrentPage();
+                if (!page) return;
+                if (window.editor) window.editor.showRevisions(page);
+                closeModal('editOptionsModal');
+            });
+        }
+
+        // Initial visibility and on page change we may update it
+        this.updateEditButtonVisibility();
+    }
+
+    updateEditButtonVisibility() {
+        const editBtn = document.getElementById('editActionBtn');
+        if (!editBtn || !window.auth || !window.wiki) return;
+        const pageId = window.wiki.getCurrentPage();
+        const canEdit = pageId ? window.auth.canEditPage(pageId, window.auth.getCurrentRole(), window.auth.getCurrentSubteam()) : false;
+        editBtn.style.display = canEdit ? 'inline-block' : 'none';
     }
 
     // Utility methods

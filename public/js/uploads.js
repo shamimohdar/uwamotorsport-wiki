@@ -119,14 +119,16 @@ class Uploads {
     async handleUpload() {
         const fileInput = document.getElementById('uploadFile');
         const uploadType = document.getElementById('uploadType').value;
+        const embedLinkInput = document.getElementById('embedLink');
+        const embedLink = embedLinkInput ? embedLinkInput.value.trim() : '';
         const file = fileInput.files[0];
 
-        if (!file) {
-            this.showError('Please select a file to upload');
+        if (!file && !embedLink) {
+            this.showError('Select a file or provide an embed link');
             return;
         }
 
-        if (!this.validateFile(file)) {
+        if (file && !this.validateFile(file)) {
             return;
         }
 
@@ -139,39 +141,72 @@ class Uploads {
             // Show loading state
             this.showUploadProgress(true);
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('pageId', this.currentPageId);
-            
-            // Set the correct field name based on upload type
-            if (uploadType === 'image') {
-                // Remove the file and re-add it with the correct field name
-                formData.delete('file');
-                formData.append('image', file);
-            } else if (uploadType === 'document') {
-                formData.delete('file');
-                formData.append('document', file);
+            let uploadedUrl = '';
+
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('pageId', this.currentPageId);
+                if (uploadType === 'image') {
+                    formData.delete('file');
+                    formData.append('image', file);
+                } else if (uploadType === 'document') {
+                    formData.delete('file');
+                    formData.append('document', file);
+                }
+
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    this.showError(result.error || 'Upload failed');
+                    this.showUploadProgress(false);
+                    return;
+                }
+
+                // Build a URL to the uploaded file
+                uploadedUrl = `/uploads/${result.file.filename}`;
             }
 
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                auth.showSuccess(`File "${file.name}" uploaded successfully!`);
-                
-                // Close modal
-                auth.closeModal('uploadModal');
-                
-                // Refresh the current page to show the new upload
-                if (wiki && wiki.getCurrentPage() === this.currentPageId) {
-                    wiki.showPage(this.currentPageId);
+            // Auto-embed if link provided or image uploaded
+            let embedHtml = '';
+            if (embedLink) {
+                // Basic iframe/embed for docs links, fallback to anchor
+                if (embedLink.includes('docs.google.com') || embedLink.includes('drive.google.com')) {
+                    embedHtml = `<iframe src="${embedLink}" style="width:100%;height:480px;border:1px solid #e1e5e9;border-radius:6px;"></iframe>`;
+                } else {
+                    embedHtml = `<a href="${embedLink}" target="_blank">View document</a>`;
                 }
-            } else {
-                this.showError(result.error || 'Upload failed');
+            } else if (uploadedUrl) {
+                if (uploadType === 'image') {
+                    embedHtml = `<img src="${uploadedUrl}" alt="" style="max-width:100%;border-radius:6px;" />`;
+                } else {
+                    embedHtml = `<a href="${uploadedUrl}" target="_blank">View document</a>`;
+                }
+            }
+
+            // If currently editing, insert at cursor; otherwise just refresh page after closing
+            if (embedHtml) {
+                const isEditing = window.editor && window.editor.getIsEditing && window.editor.getIsEditing();
+                if (isEditing) {
+                    const textarea = document.getElementById('pageContent');
+                    if (textarea) {
+                        const start = textarea.selectionStart;
+                        const text = textarea.value;
+                        textarea.value = text.substring(0, start) + embedHtml + text.substring(start);
+                    }
+                }
+            }
+
+            auth.showSuccess(embedLink ? 'Embed added.' : (uploadedUrl ? 'File uploaded.' : 'Saved.'));
+            auth.closeModal('uploadModal');
+
+            // Refresh current page to show attachments section
+            if (wiki && this.currentPageId) {
+                wiki.showPage(this.currentPageId);
             }
         } catch (error) {
             console.error('Upload error:', error);

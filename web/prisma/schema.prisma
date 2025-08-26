@@ -21,6 +21,7 @@ model User {
   accounts Account[]
   sessions Session[]
   docs     Doc[]
+  revisions Revision[]
 }
 
 model Account {
@@ -67,4 +68,18 @@ model Doc {
   updatedAt DateTime @updatedAt
   authorId  String?
   author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  revisions Revision[]
+}
+
+model Revision {
+  id        String   @id @default(cuid())
+  docId     String
+  doc       Doc      @relation(fields: [docId], references: [id], onDelete: Cascade)
+  title     String
+  content   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  version   Int
+  message   String?  // Optional commit message
 }

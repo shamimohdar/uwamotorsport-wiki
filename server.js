@@ -418,6 +418,68 @@ app.get('/api/pages/:pageId/revisions', requireAuth, (req, res) => {
     });
 });
 
+// Restore revision API
+app.post('/api/revisions/:revisionId/restore', requireAuth, requireRole(['member', 'manager']), (req, res) => {
+    const { revisionId } = req.params;
+    
+    // First get the revision content
+    db.get('SELECT * FROM page_revisions WHERE id = ?', [revisionId], (err, revision) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (!revision) {
+            return res.status(404).json({ error: 'Revision not found' });
+        }
+        
+        // Update the main page with the revision content
+        db.run(`UPDATE pages SET content = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE page_id = ?`, [revision.content, revision.page_id], function(err) {
+            if (err) {
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            // Create a new revision entry for this restore
+            db.run(`INSERT INTO page_revisions (page_id, content, edited_by) VALUES (?, ?, ?)`,
+                [revision.page_id, revision.content, req.session.userId]);
+            
+            res.json({ success: true });
+        });
+    });
+});
+
+// Delete upload API
+app.delete('/api/uploads/:uploadId', requireAuth, requireRole(['member', 'manager']), (req, res) => {
+    const { uploadId } = req.params;
+    
+    // Get upload info first
+    db.get('SELECT * FROM uploads WHERE id = ?', [uploadId], (err, upload) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (!upload) {
+            return res.status(404).json({ error: 'Upload not found' });
+        }
+        
+        // Delete from database
+        db.run('DELETE FROM uploads WHERE id = ?', [uploadId], (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            // Try to delete file from filesystem
+            fs.unlink(upload.file_path, (err) => {
+                if (err) {
+                    console.error('Error deleting file:', err);
+                    // Don't fail the request if file deletion fails
+                }
+            });
+            
+            res.json({ success: true });
+        });
+    });
+});
 // Comments API
 app.get('/api/pages/:pageId/comments', requireAuth, (req, res) => {
     const { pageId } = req.params;

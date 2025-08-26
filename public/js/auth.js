@@ -75,6 +75,11 @@ class Auth {
                 
                 // Clear form
                 document.getElementById('loginForm').reset();
+                
+                // Reinitialize navigation permissions
+                if (window.app && typeof window.app.reinitializeNavigation === 'function') {
+                    window.app.reinitializeNavigation();
+                }
             } else {
                 this.showError(data.error || 'Login failed');
             }
@@ -137,9 +142,6 @@ class Auth {
         
         // Update navigation items based on role
         this.updateNavigationPermissions(role, subteam);
-        
-        // Update edit controls visibility
-        this.updateEditControlsVisibility(role, subteam);
     }
 
     updateNavigationPermissions(role, subteam) {
@@ -150,46 +152,58 @@ class Auth {
             
             if (this.canAccessPage(pageId, role, subteam)) {
                 item.classList.remove('restricted');
-                item.onclick = () => showPage(pageId);
+                // Don't set onclick here - let app.js handle the event listeners
             } else {
                 item.classList.add('restricted');
-                item.onclick = null;
             }
         });
-    }
-
-    updateEditControlsVisibility(role, subteam) {
-        // This will be called when showing pages to determine edit button visibility
-        // Implementation in wiki.js
     }
 
     resetPermissions() {
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
             item.classList.remove('restricted');
-            item.onclick = null;
         });
     }
 
     getPageIdFromNavItem(navItem) {
-        // Extract page ID from navigation item text or data attribute
-        const text = navItem.textContent.toLowerCase();
-        const section = navItem.closest('.nav-section').querySelector('.nav-header span').textContent;
+        // Use the same logic as in app.js
+        if (window.app && typeof window.app.getPageIdFromNavItem === 'function') {
+            return window.app.getPageIdFromNavItem(navItem);
+        }
         
-        // Map section names to page IDs
+        // Fallback logic
+        const text = navItem.textContent.toLowerCase().trim();
+        const sectionElement = navItem.closest('.nav-section');
+        
+        if (!sectionElement) return text;
+        
+        const sectionHeader = sectionElement.querySelector('.nav-header span');
+        if (!sectionHeader) return text;
+        
+        const sectionText = sectionHeader.textContent;
+        
+        // Map section emojis to section IDs
         const sectionMap = {
-            '🏢 management': 'management',
-            '🛩️ aerodynamics': 'aero',
-            '🏗️ chassis': 'chassis',
-            '⚡ electrical': 'electrical',
-            '🔋 powertrain': 'powertrain',
-            '🚗 vehicle dynamics': 'vd',
-            '💼 business': 'business'
+            '🏢': 'management',
+            '🛩️': 'aero', 
+            '🏗️': 'chassis',
+            '⚡': 'electrical',
+            '🔋': 'powertrain',
+            '🚗': 'vd',
+            '💼': 'business'
         };
         
-        const sectionKey = Object.keys(sectionMap).find(key => section.includes(sectionMap[key]));
-        if (sectionKey) {
-            const sectionId = sectionMap[sectionKey];
+        // Find the emoji in the section text
+        let sectionId = null;
+        for (const [emoji, id] of Object.entries(sectionMap)) {
+            if (sectionText.includes(emoji)) {
+                sectionId = id;
+                break;
+            }
+        }
+        
+        if (sectionId) {
             return `${sectionId}-${text}`;
         }
         
@@ -197,7 +211,7 @@ class Auth {
     }
 
     canAccessPage(pageId, role, subteam) {
-        // Guest can only access overview pages
+        // Guest can only access overview and learning pages
         if (role === 'guest') {
             return pageId.includes('-overview') || pageId.includes('-learning');
         }
@@ -224,8 +238,11 @@ class Auth {
             return false;
         }
         
-        // Member can edit their subteam pages
+        // Member can edit their subteam pages (not just overviews/learning)
         if (role === 'member') {
+            if (pageId.includes('-overview') || pageId.includes('-learning')) {
+                return false; // Members cannot edit overview/learning pages
+            }
             return pageId.startsWith(subteam + '-');
         }
         
@@ -260,6 +277,10 @@ class Auth {
     }
 
     showNotification(message, type) {
+        // Remove any existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notif => notif.remove());
+        
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
@@ -275,28 +296,40 @@ class Auth {
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             z-index: 3000;
-            animation: slideIn 0.3s ease;
+            animation: slideInRight 0.3s ease;
             max-width: 300px;
             word-wrap: break-word;
+            border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};
         `;
         
-        // Add animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
+        // Add animation if not already added
+        if (!document.querySelector('#notificationStyles')) {
+            const style = document.createElement('style');
+            style.id = 'notificationStyles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOutRight {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
         
         document.body.appendChild(notification);
         
-        // Auto-remove after 3 seconds
+        // Auto-remove after 4 seconds
         setTimeout(() => {
-            notification.remove();
-            style.remove();
-        }, 3000);
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }, 4000);
     }
 
     // Public methods for other modules
@@ -319,7 +352,9 @@ class Auth {
 
 // Global functions for HTML onclick handlers
 function closeModal(modalId) {
-    auth.closeModal(modalId);
+    if (window.auth) {
+        window.auth.closeModal(modalId);
+    }
 }
 
 // Initialize authentication
